@@ -4,207 +4,269 @@ import DashboardLayout from "@/layouts/DashboardLayout";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import { mockJobs } from "@/lib/mockData";
+import { useJobs } from "@/hooks/useJobs";
+import { useApplications } from "@/hooks/useApplications";
+import { useAuth } from "@/context/AuthContext";
 import { Job } from "@/types/auth";
-import { Briefcase, Clock, MapPin, Search } from "lucide-react";
+import { 
+  Briefcase, 
+  Calendar, 
+  CheckCircle,
+  Loader2, 
+  MapPin, 
+  Search, 
+  Timer, 
+  X 
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function JobFeed() {
-  const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
-  
-  const handleApply = (job: Job) => {
-    // In a real app, this would send an application to Supabase
-    toast({
-      title: "Application submitted",
-      description: `You've applied for the ${job.title} position at ${job.company}.`,
+  const { user } = useAuth();
+  const { jobs, isLoadingJobs, searchQuery, setSearchQuery } = useJobs();
+  const { applyMutation, useHasApplied } = useApplications();
+
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
+
+  // Check if user has already applied when a job is selected
+  const { data: hasApplied, isLoading: checkingApplication } = useHasApplied(
+    selectedJob?.id || "",
+    user?.id
+  );
+
+  const handleApply = async () => {
+    if (!user || !selectedJob) return;
+    
+    setIsApplying(true);
+    try {
+      await applyMutation.mutateAsync({
+        jobId: selectedJob.id,
+        employeeId: user.id
+      });
+      // Close dialog after successful application
+      setTimeout(() => {
+        setSelectedJob(null);
+      }, 1000);
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
-  
-  // Filter jobs based on search and filters
-  const filteredJobs = mockJobs.filter((job) => {
-    const matchesSearch = searchTerm === "" || 
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchTerm.toLowerCase());
-      
-    const matchesType = selectedType === null || job.type === selectedType;
-    const matchesLocation = selectedLocation === null || job.location === selectedLocation;
-    
-    return matchesSearch && matchesType && matchesLocation;
-  });
-  
-  // Extract unique job types and locations for filters
-  const jobTypes = Array.from(new Set(mockJobs.map(job => job.type)));
-  const jobLocations = Array.from(new Set(mockJobs.map(job => job.location)));
-  
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return `${Math.floor(diffDays / 30)} months ago`;
-  };
-  
+
   return (
     <DashboardLayout title="Job Feed">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
-                className="pl-9"
-                placeholder="Search jobs by title, company, or keyword"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button variant="outline">
-              <Search className="h-4 w-4 mr-2" />
-              Search
-            </Button>
-          </div>
-          
-          {filteredJobs.length > 0 ? (
-            <div className="space-y-6">
-              {filteredJobs.map((job) => (
-                <GlassCard key={job.id} className="animate-fade-in" hoverEffect>
-                  <div className="md:flex justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-xl font-bold text-white">{job.title}</h3>
-                        <span className="px-2 py-1 bg-vortex-500/20 text-vortex-300 text-xs rounded-full">
-                          {job.type}
-                        </span>
-                      </div>
-                      
-                      <p className="text-sm text-gray-400 mb-3">{job.company}</p>
-                      
-                      <div className="flex flex-wrap gap-3 mb-4">
-                        <div className="flex items-center text-sm text-gray-300">
-                          <MapPin className="h-3.5 w-3.5 mr-1" />
-                          {job.location}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-300">
-                          <Briefcase className="h-3.5 w-3.5 mr-1" />
-                          {job.salary || "Salary not specified"}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-300">
-                          <Clock className="h-3.5 w-3.5 mr-1" />
-                          {formatDate(job.postedAt)}
-                        </div>
-                      </div>
-                      
-                      <p className="text-sm text-gray-300 mb-4 line-clamp-2">{job.description}</p>
-                      
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {job.requirements.slice(0, 3).map((req, i) => (
-                          <span 
-                            key={i} 
-                            className="px-2 py-1 bg-white/5 text-gray-300 text-xs rounded"
-                          >
-                            {req}
-                          </span>
-                        ))}
-                        {job.requirements.length > 3 && (
-                          <span className="px-2 py-1 text-gray-400 text-xs">
-                            +{job.requirements.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="md:ml-4 flex md:flex-col gap-3 mt-4 md:mt-0 md:justify-between md:items-end">
-                      <Button onClick={() => handleApply(job)}>Apply Now</Button>
-                      <Button variant="outline">View Details</Button>
-                    </div>
-                  </div>
-                </GlassCard>
-              ))}
-            </div>
-          ) : (
-            <GlassCard className="text-center py-10">
-              <p className="text-gray-400 mb-2">No jobs found matching your criteria.</p>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSearchTerm("");
-                  setSelectedType(null);
-                  setSelectedLocation(null);
-                }}
-              >
-                Clear Filters
-              </Button>
-            </GlassCard>
-          )}
+      {/* Search Bar */}
+      <GlassCard className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            className="pl-10 pr-4 py-6 text-lg rounded-lg"
+            placeholder="Search jobs by title or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
-        
-        <div>
-          <GlassCard>
-            <h2 className="font-bold text-lg text-white mb-4">Filters</h2>
-            
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-300 mb-2">Job Type</h3>
-              <div className="space-y-2">
-                {jobTypes.map((type) => (
-                  <div key={type} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={`type-${type}`}
-                      checked={selectedType === type}
-                      onChange={() => setSelectedType(selectedType === type ? null : type)}
-                      className="rounded-sm bg-transparent border border-gray-500"
-                    />
-                    <label htmlFor={`type-${type}`} className="ml-2 text-sm text-gray-300">
-                      {type}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-300 mb-2">Location</h3>
-              <div className="space-y-2">
-                {jobLocations.map((location) => (
-                  <div key={location} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={`location-${location}`}
-                      checked={selectedLocation === location}
-                      onChange={() => setSelectedLocation(selectedLocation === location ? null : location)}
-                      className="rounded-sm bg-transparent border border-gray-500"
-                    />
-                    <label htmlFor={`location-${location}`} className="ml-2 text-sm text-gray-300">
-                      {location}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => {
-                setSearchTerm("");
-                setSelectedType(null);
-                setSelectedLocation(null);
-              }}
+      </GlassCard>
+
+      {/* Job Listings */}
+      {isLoadingJobs ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-vortex-500" />
+        </div>
+      ) : jobs && jobs.length > 0 ? (
+        <div className="space-y-4">
+          {jobs.map((job) => (
+            <GlassCard 
+              key={job.id} 
+              className="animate-fade-in transition-all hover:bg-white/10" 
+              hoverEffect
             >
-              Reset Filters
-            </Button>
-          </GlassCard>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-xl font-bold text-white">{job.title}</h3>
+                <span className="px-2 py-1 bg-vortex-500/20 text-vortex-300 text-xs rounded-full">
+                  {job.type}
+                </span>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-gray-300 mb-3">
+                <div className="flex items-center">
+                  <Briefcase className="h-4 w-4 mr-1 text-gray-400" />
+                  {job.company}
+                </div>
+                <div className="flex items-center">
+                  <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                  {job.location}
+                </div>
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-1 text-gray-400" />
+                  Posted {formatDate(job.postedAt)}
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-300 mb-3 line-clamp-2">{job.description}</p>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                {job.requirements && job.requirements.slice(0, 3).map((req, idx) => (
+                  <span 
+                    key={idx}
+                    className="bg-gray-700/50 text-gray-300 text-xs px-2 py-1 rounded"
+                  >
+                    {req}
+                  </span>
+                ))}
+                {job.requirements && job.requirements.length > 3 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="bg-gray-700/50 text-gray-300 text-xs px-2 py-1 rounded">
+                          +{job.requirements.length - 3} more
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="max-w-xs">
+                          {job.requirements.slice(3).map((req, idx) => (
+                            <div key={idx} className="mb-1">{req}</div>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
+              
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div className="text-vortex-400 font-medium">
+                  {job.salary || "Salary not specified"}
+                  {job.deadline && (
+                    <span className="flex items-center text-sm text-gray-400">
+                      <Timer className="h-3.5 w-3.5 mr-1" />
+                      Apply before {formatDate(job.deadline)}
+                    </span>
+                  )}
+                </div>
+                <Button onClick={() => setSelectedJob(job)}>View Details</Button>
+              </div>
+            </GlassCard>
+          ))}
         </div>
-      </div>
+      ) : (
+        <GlassCard className="text-center py-10">
+          <X className="h-10 w-10 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-white mb-1">No Jobs Found</h3>
+          {searchQuery ? (
+            <>
+              <p className="text-gray-400">No jobs match your search criteria.</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => setSearchQuery("")}
+              >
+                Clear Search
+              </Button>
+            </>
+          ) : (
+            <p className="text-gray-400">Check back later for new job opportunities.</p>
+          )}
+        </GlassCard>
+      )}
+
+      {/* Job Details Dialog */}
+      {selectedJob && (
+        <Dialog open={!!selectedJob} onOpenChange={(open) => !open && setSelectedJob(null)}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">{selectedJob.title}</DialogTitle>
+              <DialogDescription className="flex flex-wrap gap-2 mt-1">
+                <span className="bg-vortex-500/20 text-vortex-300 px-2 py-0.5 rounded text-sm">
+                  {selectedJob.type}
+                </span>
+                <span className="flex items-center text-gray-400 text-sm">
+                  <Briefcase className="h-4 w-4 mr-1" />
+                  {selectedJob.company}
+                </span>
+                <span className="flex items-center text-gray-400 text-sm">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  {selectedJob.location}
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-lg font-semibold mb-2">Description</h4>
+                <p className="text-gray-300 whitespace-pre-line">{selectedJob.description}</p>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold mb-2">Requirements</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  {selectedJob.requirements?.map((req, idx) => (
+                    <li key={idx} className="text-gray-300">{req}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-4 border-t border-gray-700">
+                <div>
+                  {selectedJob.salary && (
+                    <p className="text-vortex-400 font-medium">{selectedJob.salary}</p>
+                  )}
+                  {selectedJob.deadline && (
+                    <p className="flex items-center text-sm text-gray-400">
+                      <Timer className="h-4 w-4 mr-1" />
+                      Apply before {formatDate(selectedJob.deadline)}
+                    </p>
+                  )}
+                </div>
+                
+                {checkingApplication ? (
+                  <Button disabled>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Checking...
+                  </Button>
+                ) : hasApplied ? (
+                  <Button disabled variant="outline" className="bg-green-500/20">
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Already Applied
+                  </Button>
+                ) : isApplying ? (
+                  <Button disabled>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Applying...
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button onClick={handleApply}>Apply Now</Button>
+                    <Button variant="outline" asChild>
+                      <Link to="/employee/dashboard">Save for Later</Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </DashboardLayout>
   );
 }

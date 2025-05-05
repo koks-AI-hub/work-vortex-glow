@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/components/ui/use-toast";
-import { PlusIcon, TrashIcon } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { PlusIcon, TrashIcon, Loader2 } from "lucide-react";
+import { useJobs } from "@/hooks/useJobs";
+import { useNavigate } from "react-router-dom";
 
 const jobSchema = z.object({
   title: z.string().min(2, "Title is required"),
@@ -22,8 +24,16 @@ const jobSchema = z.object({
 });
 
 export default function PostJob() {
-  const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { createJobMutation } = useJobs();
   const [requirements, setRequirements] = useState<string[]>([""]);
+
+  // Redirect if not company
+  if (user && user.role !== 'company') {
+    navigate('/');
+    return null;
+  }
   
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -53,25 +63,33 @@ export default function PostJob() {
     setRequirements(newRequirements);
   };
   
-  const onSubmit = (data: z.infer<typeof jobSchema>) => {
+  const onSubmit = async (data: z.infer<typeof jobSchema>) => {
+    if (!user) return;
+    
     // Filter out empty requirements
     const validRequirements = requirements.filter(req => req.trim() !== "");
     
-    // In a real app, this would send the job posting to Supabase
-    toast({
-      title: "Job Posted",
-      description: "Your job listing has been successfully published.",
-    });
-    
-    console.log({
-      ...data,
-      requirements: validRequirements,
-      postedAt: new Date().toISOString(),
-    });
-    
-    // Reset form
-    form.reset();
-    setRequirements([""]);
+    try {
+      await createJobMutation.mutateAsync({
+        title: data.title,
+        companyId: user.id,
+        location: data.location,
+        type: data.type,
+        description: data.description,
+        requirements: validRequirements,
+        salary: data.salary || null,
+        deadline: data.deadline || null
+      });
+      
+      // Reset form after successful submission
+      form.reset();
+      setRequirements([""]);
+      
+      // Redirect to company dashboard
+      navigate('/company/dashboard');
+    } catch (error) {
+      console.error("Error posting job:", error);
+    }
   };
   
   return (
@@ -225,7 +243,18 @@ export default function PostJob() {
               </p>
             </div>
             
-            <Button type="submit" className="w-full md:w-auto">Publish Job Listing</Button>
+            <Button 
+              type="submit" 
+              className="w-full md:w-auto"
+              disabled={createJobMutation.isPending}
+            >
+              {createJobMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Publishing...
+                </>
+              ) : "Publish Job Listing"}
+            </Button>
           </form>
         </Form>
       </GlassCard>

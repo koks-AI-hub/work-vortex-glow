@@ -1,16 +1,30 @@
 
+import { useEffect } from "react";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Briefcase, File, Users } from "lucide-react";
-import { mockJobs, mockApplications } from "@/lib/mockData";
+import { Briefcase, File, Users, Loader2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useJobs } from "@/hooks/useJobs";
+import { useApplications } from "@/hooks/useApplications";
 
 export default function CompanyDashboard() {
-  // For a real app, this would filter to only show this company's jobs
-  const companyJobs = mockJobs.slice(0, 2);
-  const recentApplications = mockApplications.slice(0, 3);
-
+  const { user } = useAuth();
+  
+  // Fetch company jobs
+  const { useCompanyJobs } = useJobs();
+  const { data: companyJobs, isLoading: loadingJobs, error: jobsError } = useCompanyJobs(user?.id || "");
+  
+  // Fetch company applications
+  const { useCompanyApplications } = useApplications();
+  const { data: applications, isLoading: loadingApplications, error: appsError } = 
+    useCompanyApplications(user?.id || "");
+  
+  // Display most recent applications and active jobs
+  const recentApplications = applications?.slice(0, 3) || [];
+  const activeJobs = companyJobs?.filter(job => job) || [];
+  
   return (
     <DashboardLayout title="Company Dashboard">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -20,7 +34,11 @@ export default function CompanyDashboard() {
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-400">Active Jobs</h3>
-            <p className="text-2xl font-bold text-white">{companyJobs.length}</p>
+            {loadingJobs ? (
+              <Loader2 className="h-5 w-5 animate-spin text-white mt-1" />
+            ) : (
+              <p className="text-2xl font-bold text-white">{activeJobs.length}</p>
+            )}
           </div>
         </GlassCard>
         
@@ -30,7 +48,11 @@ export default function CompanyDashboard() {
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-400">Applications</h3>
-            <p className="text-2xl font-bold text-white">{recentApplications.length}</p>
+            {loadingApplications ? (
+              <Loader2 className="h-5 w-5 animate-spin text-white mt-1" />
+            ) : (
+              <p className="text-2xl font-bold text-white">{applications?.length || 0}</p>
+            )}
           </div>
         </GlassCard>
         
@@ -39,8 +61,10 @@ export default function CompanyDashboard() {
             <Users className="h-6 w-6 text-vortex-400" />
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-400">Profile Views</h3>
-            <p className="text-2xl font-bold text-white">124</p>
+            <h3 className="text-sm font-medium text-gray-400">Profile Completion</h3>
+            <p className="text-2xl font-bold text-white">
+              {user && user.role === 'company' && user.description ? '100%' : '70%'}
+            </p>
           </div>
         </GlassCard>
       </div>
@@ -54,9 +78,17 @@ export default function CompanyDashboard() {
             </Button>
           </div>
           
-          {companyJobs.length > 0 ? (
+          {loadingJobs ? (
+            <GlassCard className="flex justify-center items-center h-48">
+              <Loader2 className="h-8 w-8 animate-spin text-vortex-500" />
+            </GlassCard>
+          ) : jobsError ? (
+            <GlassCard className="text-center py-8">
+              <p className="text-gray-400">Error loading jobs. Please try again.</p>
+            </GlassCard>
+          ) : activeJobs.length > 0 ? (
             <div className="space-y-4">
-              {companyJobs.map((job) => (
+              {activeJobs.slice(0, 2).map((job) => (
                 <GlassCard key={job.id} className="animate-fade-in" hoverEffect>
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-lg font-bold text-white">{job.title}</h3>
@@ -93,7 +125,15 @@ export default function CompanyDashboard() {
         
         <div>
           <h2 className="text-xl font-bold text-white mb-4">Recent Applications</h2>
-          {recentApplications.length > 0 ? (
+          {loadingApplications ? (
+            <GlassCard className="flex justify-center items-center h-48">
+              <Loader2 className="h-8 w-8 animate-spin text-vortex-500" />
+            </GlassCard>
+          ) : appsError ? (
+            <GlassCard className="text-center py-8">
+              <p className="text-gray-400">Error loading applications. Please try again.</p>
+            </GlassCard>
+          ) : recentApplications.length > 0 ? (
             <div className="space-y-4">
               {recentApplications.map((application) => (
                 <GlassCard key={application.id} className="animate-fade-in" hoverEffect>
