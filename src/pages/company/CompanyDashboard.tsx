@@ -8,9 +8,11 @@ import { Briefcase, File, Users, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useJobs } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
+import { Company } from "@/types/auth";
 
 export default function CompanyDashboard() {
   const { user } = useAuth();
+  const company = user?.role === 'company' ? user as Company : null;
   
   // Fetch company jobs
   const { useCompanyJobs } = useJobs();
@@ -63,7 +65,7 @@ export default function CompanyDashboard() {
           <div>
             <h3 className="text-sm font-medium text-gray-400">Profile Completion</h3>
             <p className="text-2xl font-bold text-white">
-              {user && user.role === 'company' && user.description ? '100%' : '70%'}
+              {company && company.description ? '100%' : '70%'}
             </p>
           </div>
         </GlassCard>

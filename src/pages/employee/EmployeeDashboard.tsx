@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useJobs } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
+import { Employee } from "@/types/auth";
 
 export default function EmployeeDashboard() {
   const { user } = useAuth();
+  const employee = user?.role === 'employee' ? user as Employee : null;
   
   // Fetch all jobs
   const { jobs, isLoadingJobs } = useJobs();
@@ -27,9 +29,8 @@ export default function EmployeeDashboard() {
 
   // Get profile completion percentage
   const getProfileCompletion = () => {
-    if (!user || user.role !== 'employee') return 0;
+    if (!employee) return 0;
     
-    const employee = user;
     let total = 4; // Name, Email, Profile Image, Resume
     let filled = 2; // Name and email are always filled
     

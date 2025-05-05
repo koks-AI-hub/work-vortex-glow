@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { Employee, Company } from '@/types/auth';
 
 // Hook to protect routes for specific roles and redirect if needed
 export function useAuthRedirect(
@@ -30,5 +31,10 @@ export function useAuthRedirect(
     }
   }, [user, isLoading, requiredRole, redirectPath, navigate]);
 
-  return { isLoading, user };
+  return { 
+    isLoading, 
+    user: user?.role === 'employee' ? user as Employee : 
+          user?.role === 'company' ? user as Company : 
+          user 
+  };
 }

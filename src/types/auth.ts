@@ -3,6 +3,7 @@ import { Database } from "@/integrations/supabase/types";
 
 export type UserRole = "employee" | "company";
 
+// Base user interface with common fields
 export interface User {
   id: string;
   email: string;
@@ -11,20 +12,23 @@ export interface User {
   role: UserRole;
 }
 
+// Employee interface extends User with employee-specific fields
 export interface Employee extends User {
   role: "employee";
-  profileImage?: string | null;
-  resume?: string | null;
+  profileImage: string | null;
+  resume: string | null;
   experiences: Experience[];
 }
 
+// Company interface extends User with company-specific fields
 export interface Company extends User {
   role: "company";
   sector: string;
-  logo?: string | null;
-  description?: string | null;
+  logo: string | null;
+  description: string | null;
 }
 
+// Experience interface for employee work history
 export interface Experience {
   id: string;
   role: string;
@@ -35,6 +39,7 @@ export interface Experience {
   description?: string | null;
 }
 
+// Job posting interface
 export interface Job {
   id: string;
   title: string;
@@ -49,6 +54,7 @@ export interface Job {
   deadline?: string | null; // ISO date string
 }
 
+// Job application interface
 export interface Application {
   id: string;
   jobId: string;
@@ -58,6 +64,7 @@ export interface Application {
   appliedAt: string; // ISO date string
 }
 
+// Auth state for managing authentication context
 export interface AuthState {
   user: User | Employee | Company | null;
   session: any | null;

@@ -25,7 +25,7 @@ import {
   UserRound, 
   Loader2,
 } from "lucide-react";
-import { Experience } from "@/types/auth";
+import { Experience, Employee } from "@/types/auth";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -44,6 +44,8 @@ const experienceSchema = z.object({
 
 export default function EmployeeProfile() {
   const { user, updateUser, uploadProfileImage, uploadResume, addExperience, updateExperience, deleteExperience } = useAuth();
+  const employee = user?.role === 'employee' ? user as Employee : null;
+  
   const [isAddingExperience, setIsAddingExperience] = useState(false);
   const [editingExperience, setEditingExperience] = useState<Experience | null>(null);
   const [uploading, setUploading] = useState<"profile" | "resume" | null>(null);
@@ -90,9 +92,22 @@ export default function EmployeeProfile() {
       await updateExperience({
         ...data,
         id: editingExperience.id,
+        role: data.role,
+        company: data.company,
+        startDate: data.startDate,
+        endDate: data.endDate || null,
+        current: data.current,
+        description: data.description || null,
       });
     } else {
-      await addExperience(data);
+      await addExperience({
+        role: data.role,
+        company: data.company,
+        startDate: data.startDate,
+        endDate: data.endDate || null,
+        current: data.current,
+        description: data.description || null,
+      });
     }
     
     setIsAddingExperience(false);
@@ -146,7 +161,7 @@ export default function EmployeeProfile() {
   };
 
   // Only show employee-specific content if user is an employee
-  if (!user || user.role !== "employee") {
+  if (!employee) {
     return (
       <DashboardLayout title="Profile">
         <GlassCard className="text-center py-10">
@@ -155,8 +170,6 @@ export default function EmployeeProfile() {
       </DashboardLayout>
     );
   }
-
-  const employee = user;
 
   return (
     <DashboardLayout title="My Profile">
