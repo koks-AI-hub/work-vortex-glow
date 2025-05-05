@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { EditIcon, PlusIcon, Trash2Icon, UploadIcon, UserRound } from "lucide-react";
 import { mockExperiences } from "@/lib/mockData";
+import { Experience } from "@/types/auth";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -37,7 +38,7 @@ const experienceSchema = z.object({
 export default function EmployeeProfile() {
   const { user, updateUser } = useAuth();
   const { toast } = useToast();
-  const [experiences, setExperiences] = useState(mockExperiences);
+  const [experiences, setExperiences] = useState<Experience[]>(mockExperiences);
   const [isAddingExperience, setIsAddingExperience] = useState(false);
 
   const form = useForm({
@@ -74,9 +75,15 @@ export default function EmployeeProfile() {
   };
 
   const onExperienceSubmit = (data: z.infer<typeof experienceSchema>) => {
-    const newExperience = {
-      ...data,
+    // Fix: Create a properly typed Experience object with all required fields
+    const newExperience: Experience = {
       id: `exp-${Date.now()}`,
+      role: data.role,
+      company: data.company,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      current: data.current,
+      description: data.description || "",
     };
     
     setExperiences([...experiences, newExperience]);
