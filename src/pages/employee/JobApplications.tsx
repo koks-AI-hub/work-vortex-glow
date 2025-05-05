@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useApplications } from "@/hooks/useApplications";
@@ -36,7 +35,7 @@ export default function JobApplications() {
     isLoading: loadingApplications,
     error: applicationsError
   } = useEmployeeApplications(user?.id);
-  
+
   const filteredApplications = applications?.filter((application) => {
     const matchesStatus = !statusFilter || application.status === statusFilter;
     const matchesSearch = !searchTerm || 
@@ -85,14 +84,16 @@ export default function JobApplications() {
           </div>
           <div className="w-full md:w-auto">
             <Select 
-              value={statusFilter || ""}
-              onValueChange={(value) => setStatusFilter(value || null)}
+              value={statusFilter || "all"}
+              onValueChange={(value) => {
+                setStatusFilter(value === "all" ? null : value);
+              }}
             >
               <SelectTrigger className="min-w-[180px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="reviewing">Reviewing</SelectItem>
                 <SelectItem value="accepted">Accepted</SelectItem>
@@ -144,6 +145,11 @@ export default function JobApplications() {
                   <Calendar className="h-4 w-4 mr-1 text-gray-400" />
                   Applied on {formatDate(application.appliedAt)}
                 </div>
+              </div>
+              
+              <div className="text-gray-400 text-sm mb-3">
+                <p><strong>Salary:</strong> {application.job.salary}</p>
+                <p><strong>Requirements:</strong> {application.job.requirements.join(", ")}</p>
               </div>
               
               {application.status === "pending" && (

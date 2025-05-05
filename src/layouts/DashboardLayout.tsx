@@ -1,4 +1,3 @@
-
 import { ReactNode } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -14,9 +13,9 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
-  
-  // Protect the dashboard routes - require authentication
-  useAuthRedirect('company', '/login');
+
+  // Dynamically protect routes based on the user's role
+  useAuthRedirect(user?.role || null, '/login');
 
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);

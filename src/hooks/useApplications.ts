@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Job, Application } from "@/types/auth";
@@ -26,7 +25,9 @@ export function useApplications() {
         type: "",
         description: "",
         requirements: [],
-        postedAt: application.applied_at
+        salary: "Not specified",
+        postedAt: application.applied_at,
+        deadline: null
       };
     }
     

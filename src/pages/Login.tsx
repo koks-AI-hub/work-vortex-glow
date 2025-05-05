@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -20,11 +19,6 @@ export default function Login() {
   const { login, isLoading, user } = useAuth();
   const [authInProgress, setAuthInProgress] = useState(false);
 
-  // If user is already logged in, redirect to appropriate dashboard
-  if (user) {
-    return <Navigate to={user.role === "employee" ? "/employee/dashboard" : "/company/dashboard"} />;
-  }
-
   const form = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -41,6 +35,11 @@ export default function Login() {
       setAuthInProgress(false);
     }
   };
+
+  // Redirect after hooks are initialized
+  if (user) {
+    return <Navigate to={user.role === "employee" ? "/employee/dashboard" : "/company/dashboard"} />;
+  }
 
   return (
     <AuthLayout title="Welcome Back" subtitle="Sign in to your account">
@@ -59,7 +58,6 @@ export default function Login() {
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="password"
@@ -73,7 +71,6 @@ export default function Login() {
               </FormItem>
             )}
           />
-
           <Button type="submit" className="w-full mt-6" disabled={authInProgress || isLoading}>
             {(authInProgress || isLoading) ? (
               <>
@@ -82,7 +79,6 @@ export default function Login() {
               </>
             ) : "Sign In"}
           </Button>
-
           <div className="text-center mt-4">
             <p className="text-sm text-gray-400">
               Don't have an account yet?{" "}

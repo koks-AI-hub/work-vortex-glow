@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,14 +8,14 @@ import { toast } from "@/hooks/use-toast";
 function transformJob(job: any): Job {
   return {
     id: job.id,
-    title: job.title,
-    company: job.company_name || "",
+    title: job.title || "Unknown Job", // Fallback to "Unknown Job" if title is missing
+    company: job.company_name || "Unknown Company", // Map company_name to company
     companyId: job.company_id,
-    location: job.location,
-    type: job.type,
-    description: job.description,
+    location: job.location || "Unknown Location",
+    type: job.type || "Unknown Type",
+    description: job.description || "No description provided.",
     requirements: job.requirements || [],
-    salary: job.salary,
+    salary: job.salary || "Not specified",
     postedAt: job.posted_at,
     deadline: job.deadline
   };
@@ -47,8 +46,7 @@ export function useJobs() {
           posted_at,
           deadline,
           company_id,
-          companies!inner(id, sector),
-          profiles!inner(id, name)
+          companies!inner(id, sector)
         `)
         .eq('is_active', true)
         .order('posted_at', { ascending: false });
@@ -61,13 +59,14 @@ export function useJobs() {
       const { data, error } = await query;
 
       if (error) {
+        console.error("Error fetching jobs:", error.message);
         throw error;
       }
       
       return data.map((job: any) => ({
         id: job.id,
         title: job.title,
-        company: job.profiles.name,
+        company: job.companies.name,
         companyId: job.company_id,
         location: job.location,
         type: job.type,
@@ -85,10 +84,16 @@ export function useJobs() {
     try {
       const { data, error } = await supabase.rpc('get_job_with_company_info', { job_id: jobId });
       
-      if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Job not found");
+      if (error) {
+        console.error("RPC Error:", error.message);
+        throw error;
+      }
+      if (!data || data.length === 0) {
+        console.warn(`Job with ID ${jobId} not found in RPC response.`);
+        throw new Error("Job not found");
+      }
       
-      return transformJob(data[0]);
+      return transformJob(data[0]); // Transform the job data
     } catch (error: any) {
       console.error("Error fetching job:", error);
       throw error;

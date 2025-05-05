@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useApplications } from "@/hooks/useApplications";
@@ -102,14 +101,16 @@ export default function CompanyApplications() {
         </div>
         <div className="w-full md:w-auto">
           <Select 
-            value={statusFilter || ""}
-            onValueChange={(value) => setStatusFilter(value || null)}
+            value={statusFilter || "all"}
+            onValueChange={(value) => {
+              setStatusFilter(value === "all" ? null : value);
+            }}
           >
             <SelectTrigger className="min-w-[180px]">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Statuses</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="reviewing">Reviewing</SelectItem>
               <SelectItem value="accepted">Accepted</SelectItem>
