@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Job, Application, ApplicationDetails } from "@/types/auth";
@@ -223,10 +222,12 @@ export function useApplications() {
         if (!data || data.length === 0) throw new Error("Application not found");
         
         // Add location property with default value if it's not present in the response
-        return {
-          ...data[0],
-          location: data[0].location || "Remote" // Provide default location if not available
-        };
+        const result = data[0];
+        if (!result.location) {
+          result.location = "Remote"; // Provide default location if not available
+        }
+        
+        return result;
       },
       enabled: !!applicationId
     });
