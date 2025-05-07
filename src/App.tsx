@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,9 +22,11 @@ import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import EmployeeProfile from "./pages/employee/EmployeeProfile";
 import JobFeed from "./pages/employee/JobFeed";
 import JobApplications from "./pages/employee/JobApplications";
+import ApplicationDetails from "./pages/employee/ApplicationDetails";
 
 // Company Pages
 import CompanyDashboard from "./pages/company/CompanyDashboard";
+import CompanyProfile from "./pages/company/CompanyProfile";
 import PostJob from "./pages/company/PostJob";
 import CompanyApplications from "./pages/company/CompanyApplications";
 import SearchWorkers from "./pages/company/SearchWorkers";
@@ -48,12 +51,17 @@ const App = () => (
             <Route path="/employee/profile" element={<EmployeeProfile />} />
             <Route path="/employee/jobs" element={<JobFeed />} />
             <Route path="/employee/applications" element={<JobApplications />} />
+            <Route path="/employee/applications/:id" element={<ApplicationDetails />} />
             
             {/* Company Routes */}
             <Route path="/company/dashboard" element={<CompanyDashboard />} />
+            <Route path="/company/profile" element={<CompanyProfile />} />
             <Route path="/company/post-job" element={<PostJob />} />
             <Route path="/company/applications" element={<CompanyApplications />} />
+            <Route path="/company/applications/:id" element={<ApplicationDetails />} />
             <Route path="/company/search" element={<SearchWorkers />} />
+            <Route path="/company/jobs" element={<CompanyJobs />} />
+            <Route path="/company/jobs/:id" element={<JobDetails />} />
             
             {/* Catch-all Route */}
             <Route path="*" element={<NotFound />} />

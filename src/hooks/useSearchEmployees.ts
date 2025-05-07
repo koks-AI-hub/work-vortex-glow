@@ -27,16 +27,35 @@ export function useSearchEmployees() {
     setSearchPerformed(true);
 
     try {
-      // Search for employee by phone
-      const { data, error } = await supabase.rpc(
-        'search_employee_by_phone', 
-        { phone_query: phoneNumber }
-      );
+      // Simplified direct query to profiles table to find employee by phone
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'employee')
+        .ilike('phone', `%${phoneNumber}%`)
+        .limit(1);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
       
-      if (data && data.length > 0) {
-        const foundEmployee = data[0];
+      if (profileData && profileData.length > 0) {
+        const employeeProfile = profileData[0];
+        
+        // Get employee details
+        const { data: employeeData, error: employeeError } = await supabase
+          .from('employees')
+          .select('*')
+          .eq('id', employeeProfile.id)
+          .single();
+          
+        if (employeeError) throw employeeError;
+        
+        // Combine profile and employee data
+        const foundEmployee = {
+          ...employeeProfile,
+          profile_picture: employeeData?.profile_picture,
+          resume_url: employeeData?.resume_url
+        };
+        
         setEmployee(foundEmployee);
         
         // Now fetch experiences for this employee

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useApplications } from "@/hooks/useApplications";
@@ -22,6 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Link } from "react-router-dom";
 
 export default function CompanyApplications() {
   const { user } = useAuth();
@@ -29,6 +31,7 @@ export default function CompanyApplications() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
+  const [viewingResume, setViewingResume] = useState(false);
   
   // Fetch applications for this company
   const { 
@@ -85,6 +88,19 @@ export default function CompanyApplications() {
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const handleViewResume = (application: any) => {
+    setViewingResume(true);
+    
+    // Try to open resume in a new tab if available
+    if (application.employee && application.employee.resumeUrl) {
+      window.open(application.employee.resumeUrl, '_blank');
+    } else if (applicationDetails && applicationDetails.employee.resumeUrl) {
+      window.open(applicationDetails.employee.resumeUrl, '_blank');
+    }
+    
+    setTimeout(() => setViewingResume(false), 1000);
   };
   
   return (
@@ -188,152 +204,27 @@ export default function CompanyApplications() {
                 </div>
                 
                 <div className="mt-4 md:mt-0 flex flex-col justify-center gap-2">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button onClick={() => setSelectedApplicationId(application.id)}>
-                        View Details
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-3xl">
-                      {loadingDetails ? (
-                        <div className="flex justify-center items-center py-12">
-                          <Loader2 className="h-8 w-8 animate-spin text-vortex-500" />
-                        </div>
-                      ) : detailsError || !applicationDetails ? (
-                        <div className="text-center py-8">
-                          <X className="h-10 w-10 text-red-400 mx-auto mb-4" />
-                          <h3 className="text-xl font-medium mb-1">Error Loading Details</h3>
-                          <p className="text-gray-400">
-                            There was a problem loading the application details.
-                          </p>
-                        </div>
-                      ) : (
-                        <>
-                          <DialogHeader>
-                            <DialogTitle className="text-2xl flex items-center justify-between">
-                              <span>Application Details</span>
-                              {getStatusBadge(applicationDetails.status)}
-                            </DialogTitle>
-                            <DialogDescription>
-                              {applicationDetails.job.title} at {applicationDetails.job.company}
-                            </DialogDescription>
-                          </DialogHeader>
-                          
-                          <div className="space-y-6 mt-4">
-                            {/* Applicant Details */}
-                            <div>
-                              <h3 className="text-lg font-bold text-white mb-2">Applicant Information</h3>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-400">Name</p>
-                                  <p className="text-white">{applicationDetails.employee.name}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-400">Email</p>
-                                  <p className="text-white">{applicationDetails.employee.email}</p>
-                                </div>
-                                {applicationDetails.employee.phone && (
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-400">Phone</p>
-                                    <p className="text-white">{applicationDetails.employee.phone}</p>
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {/* Resume Link */}
-                              {applicationDetails.employee.resumeUrl && (
-                                <div className="mt-4">
-                                  <a 
-                                    href={applicationDetails.employee.resumeUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center text-vortex-400 hover:text-vortex-300"
-                                  >
-                                    <FileText className="h-4 w-4 mr-1" />
-                                    View Resume
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                            
-                            {/* Timeline */}
-                            <div>
-                              <h3 className="text-lg font-bold text-white mb-2">Timeline</h3>
-                              <div className="space-y-2">
-                                <div className="flex">
-                                  <div className="w-4 h-4 rounded-full bg-vortex-500 mt-1 mr-3"></div>
-                                  <div>
-                                    <p className="text-white">Applied</p>
-                                    <p className="text-xs text-gray-400">
-                                      {new Date(applicationDetails.appliedAt).toLocaleString()}
-                                    </p>
-                                  </div>
-                                </div>
-                                
-                                {applicationDetails.status !== "pending" && applicationDetails.updatedAt && (
-                                  <div className="flex">
-                                    <div className={`w-4 h-4 rounded-full mt-1 mr-3 ${
-                                      applicationDetails.status === "reviewing" ? "bg-blue-500" :
-                                      applicationDetails.status === "accepted" ? "bg-green-500" : "bg-red-500"
-                                    }`}></div>
-                                    <div>
-                                      <p className="text-white">
-                                        Status Updated to {applicationDetails.status.charAt(0).toUpperCase() + applicationDetails.status.slice(1)}
-                                      </p>
-                                      <p className="text-xs text-gray-400">
-                                        {new Date(applicationDetails.updatedAt).toLocaleString()}
-                                      </p>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            
-                            {/* Status Update */}
-                            <div>
-                              <h3 className="text-lg font-bold text-white mb-2">Update Status</h3>
-                              <div className="flex flex-wrap gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  className={applicationDetails.status === "reviewing" ? "bg-blue-500/20" : ""}
-                                  onClick={() => handleStatusChange(applicationDetails.id, "reviewing")}
-                                  disabled={updateStatusMutation.isPending}
-                                >
-                                  Reviewing
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  className={applicationDetails.status === "accepted" ? "bg-green-500/20" : ""}
-                                  onClick={() => handleStatusChange(applicationDetails.id, "accepted")}
-                                  disabled={updateStatusMutation.isPending}
-                                >
-                                  Accept
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  className={applicationDetails.status === "rejected" ? "bg-red-500/20" : ""}
-                                  onClick={() => handleStatusChange(applicationDetails.id, "rejected")}
-                                  disabled={updateStatusMutation.isPending}
-                                >
-                                  Reject
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </DialogContent>
-                  </Dialog>
+                  <Button asChild>
+                    <Link to={`/company/applications/${application.id}`}>View Details</Link>
+                  </Button>
                   
-                  {/* Resume Button */}
+                  {/* Resume Button - Opening in new tab */}
                   <Button 
                     variant="outline" 
-                    onClick={() => {
-                      // This code will be replaced when we implement the detailed view
-                      setSelectedApplicationId(application.id);
-                    }}
+                    onClick={() => handleViewResume(application)}
+                    disabled={viewingResume}
                   >
-                    View Resume
+                    {viewingResume ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Opening Resume...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="h-4 w-4 mr-2" />
+                        View Resume
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

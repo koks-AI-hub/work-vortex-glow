@@ -1,4 +1,6 @@
+
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useApplications } from "@/hooks/useApplications";
 import DashboardLayout from "@/layouts/DashboardLayout";
@@ -181,10 +183,12 @@ export default function JobApplications() {
                   variant="outline" 
                   size="sm"
                   className="flex items-center"
-                  onClick={() => {/* View application details */}}
+                  asChild
                 >
-                  <Eye className="h-4 w-4 mr-1" />
-                  View Details
+                  <Link to={`/employee/applications/${application.id}`}>
+                    <Eye className="h-4 w-4 mr-1" />
+                    View Details
+                  </Link>
                 </Button>
               </div>
             </GlassCard>
@@ -213,11 +217,9 @@ export default function JobApplications() {
               <p className="text-gray-400">You haven't applied to any jobs yet.</p>
               <Button
                 className="mt-4"
-                onClick={() => {
-                  window.location.href = "/employee/jobs";
-                }}
+                asChild
               >
-                Browse Jobs
+                <Link to="/employee/jobs">Browse Jobs</Link>
               </Button>
             </>
           )}
