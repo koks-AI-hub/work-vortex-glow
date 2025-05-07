@@ -27,35 +27,23 @@ export function useSearchEmployees() {
     setSearchPerformed(true);
 
     try {
-      // Simplified direct query to profiles table to find employee by phone
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'employee')
-        .ilike('phone', `%${phoneNumber}%`)
-        .limit(1);
+      console.log("Searching for phone number:", phoneNumber);
 
-      if (profileError) throw profileError;
+      // Use the search_employee_by_phone RPC function or direct query
+      const { data, error } = await supabase.rpc(
+        'search_employee_by_phone',
+        { phone_query: phoneNumber }
+      );
+
+      if (error) {
+        console.error("RPC error:", error);
+        throw error;
+      }
       
-      if (profileData && profileData.length > 0) {
-        const employeeProfile = profileData[0];
-        
-        // Get employee details
-        const { data: employeeData, error: employeeError } = await supabase
-          .from('employees')
-          .select('*')
-          .eq('id', employeeProfile.id)
-          .single();
-          
-        if (employeeError) throw employeeError;
-        
-        // Combine profile and employee data
-        const foundEmployee = {
-          ...employeeProfile,
-          profile_picture: employeeData?.profile_picture,
-          resume_url: employeeData?.resume_url
-        };
-        
+      console.log("Search results:", data);
+      
+      if (data && data.length > 0) {
+        const foundEmployee = data[0];
         setEmployee(foundEmployee);
         
         // Now fetch experiences for this employee
@@ -68,10 +56,55 @@ export function useSearchEmployees() {
           
         if (expError) throw expError;
         
+        console.log("Experience data:", expData);
         setExperiences(expData || []);
       } else {
-        setEmployee(null);
-        setExperiences([]);
+        // As fallback, try direct query to profiles table
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select(`
+            id, 
+            name, 
+            email, 
+            phone,
+            employees (
+              profile_picture,
+              resume_url
+            )
+          `)
+          .eq('role', 'employee')
+          .ilike('phone', `%${phoneNumber}%`);
+          
+        if (profileError) throw profileError;
+        console.log("Direct query results:", profileData);
+        
+        if (profileData && profileData.length > 0) {
+          const foundEmployee = {
+            id: profileData[0].id,
+            name: profileData[0].name,
+            email: profileData[0].email,
+            phone: profileData[0].phone,
+            profile_picture: profileData[0].employees?.[0]?.profile_picture,
+            resume_url: profileData[0].employees?.[0]?.resume_url
+          };
+          
+          setEmployee(foundEmployee);
+          
+          // Fetch experiences
+          const { data: expData, error: expError } = await supabase
+            .from('experiences')
+            .select('*')
+            .eq('employee_id', foundEmployee.id)
+            .order('current', { ascending: false })
+            .order('start_date', { ascending: false });
+            
+          if (expError) throw expError;
+          
+          setExperiences(expData || []);
+        } else {
+          setEmployee(null);
+          setExperiences([]);
+        }
       }
     } catch (err: any) {
       console.error("Search error:", err);

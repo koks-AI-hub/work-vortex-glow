@@ -222,10 +222,10 @@ export function useApplications() {
         if (error) throw error;
         if (!data || data.length === 0) throw new Error("Application not found");
         
-        // Return the application details with a default location if none exists
+        // Add location field with default value if not present
         return {
           ...data[0],
-          location: data[0].location || "Remote" // Add default location if not present
+          location: data[0].location || "Remote" 
         };
       },
       enabled: !!applicationId

@@ -97,13 +97,14 @@ export default function CompanyProfile() {
 
       // Update local state
       if (user.role === 'company') {
-        updateUser({
+        const updatedUser = {
           ...user,
           name: data.name,
           phone: data.phone,
-          sector: data.sector, 
+          sector: data.sector,
           description: data.description,
-        });
+        };
+        updateUser(updatedUser as User);
       }
     } catch (error: any) {
       console.error("Error updating profile:", error);
@@ -150,13 +151,12 @@ export default function CompanyProfile() {
       // Update local state
       setLogoUrl(logoUrl);
       
-      // Only update the logo property if user is a company
       if (user.role === 'company') {
-        const companyUser = user as Company;
-        updateUser({
-          ...companyUser,
+        const updatedUser = {
+          ...user,
           logo: logoUrl,
-        });
+        };
+        updateUser(updatedUser as User);
       }
 
       toast({

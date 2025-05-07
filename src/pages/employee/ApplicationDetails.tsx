@@ -40,7 +40,10 @@ export default function ApplicationDetails() {
       if (error) throw error;
       if (!data || data.length === 0) throw new Error('Application not found');
       
-      return { ...data[0], location: data[0].location || "Remote" };
+      return { 
+        ...data[0],
+        location: data[0].location || "Remote"  // Default location if not available
+      };
     },
     enabled: !!id && !!user
   });
@@ -152,7 +155,7 @@ export default function ApplicationDetails() {
                 <MapPin className="h-5 w-5 text-vortex-400 mr-3 mt-0.5" />
                 <div>
                   <div className="font-medium text-white">Location</div>
-                  <div className="text-gray-400">{application.location}</div>
+                  <div className="text-gray-400">{application.location || "Remote"}</div>
                 </div>
               </div>
             </div>

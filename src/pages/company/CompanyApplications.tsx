@@ -21,16 +21,14 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Link } from "react-router-dom";
 
 export default function CompanyApplications() {
   const { user } = useAuth();
-  const { useCompanyApplications, updateStatusMutation, useApplicationDetails } = useApplications();
+  const { useCompanyApplications, updateStatusMutation } = useApplications();
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null);
   const [viewingResume, setViewingResume] = useState(false);
   
   // Fetch applications for this company
@@ -39,13 +37,6 @@ export default function CompanyApplications() {
     isLoading: loadingApplications, 
     error: applicationsError
   } = useCompanyApplications(user?.id);
-  
-  // Fetch selected application details
-  const {
-    data: applicationDetails,
-    isLoading: loadingDetails,
-    error: detailsError
-  } = useApplicationDetails(selectedApplicationId || "");
   
   const filteredApplications = applications?.filter(app => {
     const matchesStatus = !statusFilter || app.status === statusFilter;
@@ -91,13 +82,15 @@ export default function CompanyApplications() {
   };
 
   const handleViewResume = (application: any) => {
+    if (!application) return;
+    
     setViewingResume(true);
     
-    // Try to open resume in a new tab if available
-    if (application.employee && application.employee.resumeUrl) {
-      window.open(application.employee.resumeUrl, '_blank');
-    } else if (applicationDetails && applicationDetails.employee.resumeUrl) {
-      window.open(applicationDetails.employee.resumeUrl, '_blank');
+    // Find the resume URL
+    const resumeUrl = application.job?.employee?.resumeUrl || null;
+    
+    if (resumeUrl) {
+      window.open(resumeUrl, '_blank');
     }
     
     setTimeout(() => setViewingResume(false), 1000);
@@ -110,7 +103,7 @@ export default function CompanyApplications() {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input 
             className="pl-9"
-            placeholder="Search by job title or candidate ID"
+            placeholder="Search by job title"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -206,25 +199,6 @@ export default function CompanyApplications() {
                 <div className="mt-4 md:mt-0 flex flex-col justify-center gap-2">
                   <Button asChild>
                     <Link to={`/company/applications/${application.id}`}>View Details</Link>
-                  </Button>
-                  
-                  {/* Resume Button - Opening in new tab */}
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleViewResume(application)}
-                    disabled={viewingResume}
-                  >
-                    {viewingResume ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Opening Resume...
-                      </>
-                    ) : (
-                      <>
-                        <FileText className="h-4 w-4 mr-2" />
-                        View Resume
-                      </>
-                    )}
                   </Button>
                 </div>
               </div>
