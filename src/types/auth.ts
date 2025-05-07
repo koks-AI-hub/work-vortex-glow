@@ -81,7 +81,7 @@ export interface ApplicationDetails {
   employee_phone: string;
   employee_profile_picture: string;
   employee_resume_url: string;
-  location?: string; // Make location optional
+  location: string; // Added this property
 }
 
 // Auth state for managing authentication context
