@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { ApplicationDetails as AppDetails } from "@/types/auth"; 
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ export default function ApplicationDetails() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   
-  const { data: application, isLoading, error } = useQuery({
+  const { data: application, isLoading, error } = useQuery<AppDetails, Error>({
     queryKey: ['application-details', id],
     queryFn: async () => {
       // First check if the application belongs to the current user
@@ -40,7 +40,7 @@ export default function ApplicationDetails() {
       if (error) throw error;
       if (!data || data.length === 0) throw new Error('Application not found');
       
-      return data[0];
+      return { ...data[0], location: data[0].location || "Remote" };
     },
     enabled: !!id && !!user
   });
@@ -152,7 +152,7 @@ export default function ApplicationDetails() {
                 <MapPin className="h-5 w-5 text-vortex-400 mr-3 mt-0.5" />
                 <div>
                   <div className="font-medium text-white">Location</div>
-                  <div className="text-gray-400">{application.location || "Not specified"}</div>
+                  <div className="text-gray-400">{application.location}</div>
                 </div>
               </div>
             </div>

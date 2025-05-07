@@ -15,6 +15,7 @@ export const mockJobs: Job[] = [
     salary: "$80,000 - $110,000",
     postedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    isActive: true
   },
   {
     id: "job-2",
@@ -28,6 +29,7 @@ export const mockJobs: Job[] = [
     salary: "$90,000 - $120,000",
     postedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     deadline: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    isActive: true
   },
   {
     id: "job-3",
@@ -40,6 +42,7 @@ export const mockJobs: Job[] = [
     requirements: ["Node.js", "PostgreSQL", "API design", "Cloud infrastructure"],
     salary: "$50 - $70/hour",
     postedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    isActive: true
   },
   {
     id: "job-4",
@@ -53,6 +56,7 @@ export const mockJobs: Job[] = [
     salary: "$120,000 - $150,000",
     postedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     deadline: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+    isActive: true
   },
   {
     id: "job-5",
@@ -66,6 +70,7 @@ export const mockJobs: Job[] = [
     salary: "$110,000 - $140,000",
     postedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    isActive: true
   },
 ];
 

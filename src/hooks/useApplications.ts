@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Job, Application } from "@/types/auth";
+import { Job, Application, ApplicationDetails } from "@/types/auth";
 import { toast } from "@/hooks/use-toast";
 import { useJobs } from "./useJobs";
 
@@ -211,7 +211,7 @@ export function useApplications() {
   
   // Get application details
   const useApplicationDetails = (applicationId: string) => {
-    return useQuery({
+    return useQuery<ApplicationDetails, Error>({
       queryKey: ['application', applicationId],
       queryFn: async () => {
         const { data, error } = await supabase.rpc(
@@ -222,24 +222,10 @@ export function useApplications() {
         if (error) throw error;
         if (!data || data.length === 0) throw new Error("Application not found");
         
-        const appDetails = data[0];
-        
-        // Format the application data
+        // Return the application details with a default location if none exists
         return {
-          id: appDetails.id,
-          status: appDetails.status,
-          applied_at: appDetails.applied_at,
-          updated_at: appDetails.updated_at,
-          job_id: appDetails.job_id,
-          job_title: appDetails.job_title,
-          job_company_name: appDetails.job_company_name,
-          employee_id: appDetails.employee_id,
-          employee_name: appDetails.employee_name,
-          employee_email: appDetails.employee_email,
-          employee_phone: appDetails.employee_phone,
-          employee_profile_picture: appDetails.employee_profile_picture,
-          employee_resume_url: appDetails.employee_resume_url,
-          location: "Remote" // Adding a default location for backward compatibility
+          ...data[0],
+          location: data[0].location || "Remote" // Add default location if not present
         };
       },
       enabled: !!applicationId

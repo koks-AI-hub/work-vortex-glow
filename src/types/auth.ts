@@ -53,7 +53,7 @@ export interface Job {
   salary?: string | null;
   postedAt: string; // ISO date string
   deadline?: string | null; // ISO date string
-  isActive: boolean; // Add this property
+  isActive: boolean;
 }
 
 // Job application interface
@@ -64,6 +64,24 @@ export interface Application {
   employeeId: string;
   status: "pending" | "reviewing" | "accepted" | "rejected";
   appliedAt: string; // ISO date string
+}
+
+// Application details from database RPC function
+export interface ApplicationDetails {
+  id: string;
+  status: string;
+  applied_at: string;
+  updated_at: string;
+  job_id: string;
+  job_title: string;
+  job_company_name: string;
+  employee_id: string;
+  employee_name: string;
+  employee_email: string;
+  employee_phone: string;
+  employee_profile_picture: string;
+  employee_resume_url: string;
+  location: string; // Add location field
 }
 
 // Auth state for managing authentication context

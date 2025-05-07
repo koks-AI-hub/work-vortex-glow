@@ -1,40 +1,66 @@
 
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { useApplications } from "@/hooks/useApplications";
+import { ApplicationDetails } from "@/types/auth";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Calendar, FileText, MapPin, Briefcase, Building, X, Loader2, Mail, Phone } from "lucide-react";
+import { useApplications } from "@/hooks/useApplications";
+import { toast } from "@/hooks/use-toast";
+import {
+  Loader2,
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  AtSign,
+  Phone,
+  User,
+  FileText,
+  Clock,
+  CheckCircle2,
+  XCircle
+} from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ApplicationDetails() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Use the existing hook for application details
   const { useApplicationDetails, updateStatusMutation } = useApplications();
   
-  const { data: application, isLoading, error, refetch } = useApplicationDetails(id || "");
+  // Fetch application details
+  const { data: application, isLoading, error } = useApplicationDetails(id || "");
   
-  // Add loading state for resume view
-  const [viewingResume, setViewingResume] = useState(false);
-  
-  const handleStatusChange = async (newStatus: string) => {
+  // Status update handler
+  const handleStatusUpdate = async (newStatus: string) => {
     if (!id) return;
     
+    setIsUpdating(true);
     try {
       await updateStatusMutation.mutateAsync({
         applicationId: id,
         status: newStatus
       });
-      
-      // Refetch the application details to show updated status
-      refetch();
     } catch (error) {
-      console.error("Error updating status:", error);
+      console.error("Error updating application status:", error);
+    } finally {
+      setIsUpdating(false);
     }
   };
   
@@ -52,7 +78,7 @@ export default function ApplicationDetails() {
         return <Badge variant="outline">Unknown</Badge>;
     }
   };
-  
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -75,7 +101,7 @@ export default function ApplicationDetails() {
     return (
       <DashboardLayout title="Application Details">
         <GlassCard className="text-center py-10">
-          <X className="h-10 w-10 text-red-400 mx-auto mb-4" />
+          <XCircle className="h-10 w-10 text-red-400 mx-auto mb-4" />
           <h3 className="text-xl font-medium text-white mb-1">Error Loading Application</h3>
           <p className="text-gray-400 mb-6">
             {error instanceof Error ? error.message : "There was an error loading the application details."}
@@ -99,215 +125,204 @@ export default function ApplicationDetails() {
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <GlassCard className="animate-fade-in">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold text-white">{application.job.title}</h1>
-                  {getStatusBadge(application.status)}
-                </div>
-                <div className="flex items-center mt-1 text-gray-400">
-                  <Building className="h-4 w-4 mr-1" />
-                  <span>{application.job.company}</span>
-                </div>
-              </div>
-              
-              <div className="mt-4 md:mt-0">
-                <div className="text-sm text-gray-400">
-                  Applied on {formatDate(application.appliedAt)}
-                </div>
-                {application.updatedAt && application.status !== "pending" && (
-                  <div className="text-sm text-gray-400">
-                    Status updated on {formatDate(application.updatedAt)}
-                  </div>
-                )}
-              </div>
+      <GlassCard className="animate-fade-in">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-white">{application.job_title}</h1>
+              {getStatusBadge(application.status)}
             </div>
-            
-            <Separator className="my-6 bg-white/10" />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Applicant Information</h3>
-                <div className="space-y-4">
-                  <div className="flex items-start">
-                    <div className="h-8 w-8 rounded-full bg-vortex-700/50 flex items-center justify-center mr-3">
-                      {application.employee.profilePicture ? (
-                        <img 
-                          src={application.employee.profilePicture} 
-                          alt={application.employee.name}
-                          className="h-8 w-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        application.employee.name.charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-medium text-white">{application.employee.name}</div>
-                      <div className="text-gray-400">Candidate</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start">
-                    <Mail className="h-5 w-5 text-vortex-400 mr-3 mt-0.5" />
-                    <div>
-                      <div className="font-medium text-white">Email</div>
-                      <div className="text-gray-400">{application.employee.email}</div>
-                    </div>
-                  </div>
-                  
-                  {application.employee.phone && (
-                    <div className="flex items-start">
-                      <Phone className="h-5 w-5 text-vortex-400 mr-3 mt-0.5" />
-                      <div>
-                        <div className="font-medium text-white">Phone</div>
-                        <div className="text-gray-400">{application.employee.phone}</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {application.employee.resumeUrl && (
-                    <div className="pt-2">
-                      <Button 
-                        variant="outline"
-                        className="w-full flex items-center justify-center"
-                        onClick={() => {
-                          setViewingResume(true);
-                          // Open resume in a new tab
-                          window.open(application.employee.resumeUrl, '_blank');
-                          setTimeout(() => setViewingResume(false), 1000);
-                        }}
-                        disabled={viewingResume}
-                      >
-                        {viewingResume ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Opening Resume...
-                          </>
-                        ) : (
-                          <>
-                            <FileText className="h-4 w-4 mr-2" />
-                            View Resume
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-bold text-white mb-4">Application Status</h3>
-                <div className="space-y-6">
-                  <div className="flex flex-col space-y-2 relative before:absolute before:left-[15px] before:h-full before:w-[1px] before:bg-gray-600/30 before:top-6">
-                    <div className="flex items-start z-10">
-                      <div className="h-5 w-5 rounded-full bg-vortex-500 flex items-center justify-center mr-3">
-                        <div className="h-2 w-2 rounded-full bg-white"></div>
-                      </div>
-                      <div>
-                        <div className="font-medium text-white">Applied</div>
-                        <div className="text-xs text-gray-400">
-                          {new Date(application.appliedAt).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {application.status !== "pending" && application.updatedAt && (
-                      <div className="flex items-start ml-0 pt-6 z-10">
-                        <div className={`h-5 w-5 rounded-full mr-3 flex items-center justify-center ${
-                          application.status === "reviewing" ? "bg-blue-500" :
-                          application.status === "accepted" ? "bg-green-500" : "bg-red-500"
-                        }`}>
-                          <div className="h-2 w-2 rounded-full bg-white"></div>
-                        </div>
-                        <div>
-                          <div className="font-medium text-white">
-                            Status Updated to {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            {new Date(application.updatedAt).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-white mb-2">Update Status</h4>
-                    <div className="flex flex-wrap gap-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className={application.status === "reviewing" ? "bg-blue-500/20" : ""}
-                        onClick={() => handleStatusChange("reviewing")}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        {updateStatusMutation.isPending && application.status !== "reviewing" ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : null}
-                        Reviewing
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className={application.status === "accepted" ? "bg-green-500/20" : ""}
-                        onClick={() => handleStatusChange("accepted")}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        {updateStatusMutation.isPending && application.status !== "accepted" ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : null}
-                        Accept
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className={application.status === "rejected" ? "bg-red-500/20" : ""}
-                        onClick={() => handleStatusChange("rejected")}
-                        disabled={updateStatusMutation.isPending}
-                      >
-                        {updateStatusMutation.isPending && application.status !== "rejected" ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : null}
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center mt-1 text-gray-400">
+              <MapPin className="h-4 w-4 mr-1" />
+              <span>{application.location || "Remote"}</span>
             </div>
-          </GlassCard>
+          </div>
+          
+          <div className="mt-4 md:mt-0">
+            <div className="text-sm text-gray-400">
+              Applied on {formatDate(application.applied_at)}
+              {application.updated_at && application.status !== "pending" && (
+                <div className="text-xs">
+                  Status updated on {formatDate(application.updated_at)}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         
-        <div className="lg:col-span-1">
-          <GlassCard>
-            <h3 className="text-lg font-bold text-white mb-4">Job Details</h3>
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <Briefcase className="h-5 w-5 text-vortex-400 mr-3" />
-                <div className="text-white">{application.job.title}</div>
+        <Separator className="my-6 bg-white/10" />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4">Applicant Details</h3>
+            <div className="space-y-4">
+              <div className="flex items-start">
+                <User className="h-5 w-5 text-vortex-400 mr-3 mt-0.5" />
+                <div>
+                  <div className="font-medium text-white">Name</div>
+                  <div className="text-gray-400">{application.employee_name}</div>
+                </div>
               </div>
               
-              <div className="flex items-center">
-                <Building className="h-5 w-5 text-vortex-400 mr-3" />
-                <div className="text-white">{application.job.company}</div>
+              <div className="flex items-start">
+                <AtSign className="h-5 w-5 text-vortex-400 mr-3 mt-0.5" />
+                <div>
+                  <div className="font-medium text-white">Email</div>
+                  <div className="text-gray-400">{application.employee_email}</div>
+                </div>
               </div>
               
-              <Button 
-                asChild
-                className="w-full mt-4"
-                variant="outline"
-              >
-                <Link to={`/company/jobs/${application.job.id}`}>
-                  View Complete Job Details
-                </Link>
-              </Button>
+              {application.employee_phone && (
+                <div className="flex items-start">
+                  <Phone className="h-5 w-5 text-vortex-400 mr-3 mt-0.5" />
+                  <div>
+                    <div className="font-medium text-white">Phone</div>
+                    <div className="text-gray-400">{application.employee_phone}</div>
+                  </div>
+                </div>
+              )}
+              
+              {application.employee_resume_url && (
+                <div className="flex items-start">
+                  <FileText className="h-5 w-5 text-vortex-400 mr-3 mt-0.5" />
+                  <div>
+                    <div className="font-medium text-white">Resume</div>
+                    <Button variant="link" className="h-auto p-0 text-vortex-400" asChild>
+                      <a 
+                        href={application.employee_resume_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                      >
+                        View Resume
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-          </GlassCard>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-bold text-white mb-4">Application Status</h3>
+            <div className="space-y-4">
+              <div className="flex items-start">
+                <Calendar className="h-5 w-5 text-vortex-400 mr-3 mt-0.5" />
+                <div>
+                  <div className="font-medium text-white">Applied Date</div>
+                  <div className="text-gray-400">{formatDate(application.applied_at)}</div>
+                </div>
+              </div>
+              
+              <div className="flex items-start">
+                <Clock className="h-5 w-5 text-vortex-400 mr-3 mt-0.5" />
+                <div>
+                  <div className="font-medium text-white">Status</div>
+                  <div className="flex items-center">
+                    {getStatusBadge(application.status)}
+                    {application.updated_at && application.status !== "pending" && (
+                      <span className="text-gray-400 text-xs ml-2">
+                        Updated: {formatDate(application.updated_at)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <div className="font-medium text-white mb-2">Update Status</div>
+                <div className="flex items-center space-x-3">
+                  <Select
+                    defaultValue={application.status}
+                    onValueChange={handleStatusUpdate}
+                    disabled={isUpdating}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="reviewing">Reviewing</SelectItem>
+                      <SelectItem value="accepted">Accepted</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {isUpdating && <Loader2 className="h-4 w-4 animate-spin" />}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+        
+        <Separator className="my-6 bg-white/10" />
+        
+        <div className="mb-6">
+          <h3 className="text-lg font-bold text-white mb-4">Job Details</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-gray-400 text-sm">Position</p>
+              <p className="text-white font-medium">{application.job_title}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Company</p>
+              <p className="text-white font-medium">{application.job_company_name}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Applied On</p>
+              <p className="text-white font-medium">{formatDate(application.applied_at)}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-sm">Location</p>
+              <p className="text-white font-medium">{application.location || "Remote"}</p>
+            </div>
+          </div>
+        </div>
+        
+        {application.status === "accepted" && (
+          <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-6">
+            <h3 className="text-green-300 text-lg font-semibold mb-2 flex items-center">
+              <CheckCircle2 className="h-5 w-5 mr-2" />
+              Application Accepted
+            </h3>
+            <p className="text-green-100/70">
+              You have accepted this candidate's application. Consider reaching out to them via email 
+              to discuss the next steps in the hiring process.
+            </p>
+          </div>
+        )}
+        
+        {application.status === "rejected" && (
+          <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 mb-6">
+            <h3 className="text-red-300 text-lg font-semibold mb-2 flex items-center">
+              <XCircle className="h-5 w-5 mr-2" />
+              Application Rejected
+            </h3>
+            <p className="text-red-100/70">
+              You have rejected this application. The candidate will be notified about the status change.
+            </p>
+          </div>
+        )}
+        
+        <div className="flex justify-between">
+          <Button asChild variant="outline">
+            <Link to={`/company/jobs/${application.job_id}`}>View Job Posting</Link>
+          </Button>
+          
+          {application.employee_resume_url && (
+            <Button asChild>
+              <a 
+                href={application.employee_resume_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Download Resume
+              </a>
+            </Button>
+          )}
+        </div>
+      </GlassCard>
     </DashboardLayout>
   );
 }
