@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -6,50 +5,70 @@ import { useAuth } from "@/context/AuthContext";
 import { Employee } from "@/types/auth";
 import { ProfileForm, ProfileFormValues } from "@/components/employee/ProfileForm";
 import { ProfileMedia } from "@/components/employee/ProfileMedia";
-import { ExperienceSection } from "@/components/employee/ExperienceSection";
-import { ExperienceFormValues } from "@/components/employee/ExperienceForm";
+import { ExperienceList } from "@/components/employee/ExperienceList";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function EmployeeProfile() {
-  const { user, updateUser, uploadProfileImage, uploadResume, addExperience, updateExperience, deleteExperience } = useAuth();
+  const { toast } = useToast();
+  const { user, updateUser, uploadProfileImage, uploadResume } = useAuth();
   const employee = user?.role === 'employee' ? user as Employee : null;
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleProfileUpdate = async (data: ProfileFormValues) => {
-    await updateUser(data);
+    try {
+      setIsLoading(true);
+      await updateUser(data);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully."
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: error.message || "Failed to update profile. Please try again."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleProfileImageChange = async (file: File) => {
-    await uploadProfileImage(file);
+    try {
+      setIsLoading(true);
+      await uploadProfileImage(file);
+      toast({
+        title: "Profile Image Updated",
+        description: "Your profile image has been updated successfully."
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: error.message || "Failed to upload profile image. Please try again."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handleResumeUpload = async (file: File) => {
-    await uploadResume(file);
-  };
-
-  const handleAddExperience = async (data: ExperienceFormValues) => {
-    await addExperience({
-      role: data.role,
-      company: data.company,
-      startDate: data.startDate,
-      endDate: data.endDate || null,
-      current: data.current,
-      description: data.description || null,
-    });
-  };
-
-  const handleUpdateExperience = async (id: string, data: ExperienceFormValues) => {
-    await updateExperience({
-      id,
-      role: data.role,
-      company: data.company,
-      startDate: data.startDate,
-      endDate: data.endDate || null,
-      current: data.current,
-      description: data.description || null,
-    });
-  };
-
-  const handleDeleteExperience = async (id: string) => {
-    await deleteExperience(id);
+    try {
+      setIsLoading(true);
+      await uploadResume(file);
+      toast({
+        title: "Resume Updated",
+        description: "Your resume has been uploaded successfully."
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: error.message || "Failed to upload resume. Please try again."
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Only show employee-specific content if user is an employee
@@ -72,24 +91,27 @@ export default function EmployeeProfile() {
             employee={employee}
             onProfileImageChange={handleProfileImageChange}
             onResumeUpload={handleResumeUpload}
+            isLoading={isLoading}
           />
 
           <div className="flex-grow">
             <ProfileForm 
               user={user}
               onSubmit={handleProfileUpdate}
+              isLoading={isLoading}
             />
           </div>
         </div>
       </GlassCard>
 
-      {/* Experience Section */}
-      <ExperienceSection
-        experiences={employee.experiences}
-        onAddExperience={handleAddExperience}
-        onUpdateExperience={handleUpdateExperience}
-        onDeleteExperience={handleDeleteExperience}
-      />
+      {/* Experience Section - Read Only */}
+      <GlassCard className="mb-6">
+        <h2 className="text-xl font-bold text-white mb-4">Experience</h2>
+        <ExperienceList
+          experiences={employee.experiences || []}
+          readOnly={true}
+        />
+      </GlassCard>
     </DashboardLayout>
   );
 }

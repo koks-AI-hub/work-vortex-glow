@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Experience } from "@/types/auth";
@@ -12,13 +11,15 @@ interface ExperienceSectionProps {
   onAddExperience: (data: ExperienceFormValues) => Promise<void>;
   onUpdateExperience: (id: string, data: ExperienceFormValues) => Promise<void>;
   onDeleteExperience: (id: string) => Promise<void>;
+  isLoading?: boolean;
 }
 
 export function ExperienceSection({
   experiences,
   onAddExperience,
   onUpdateExperience,
-  onDeleteExperience
+  onDeleteExperience,
+  isLoading = false
 }: ExperienceSectionProps) {
   const [isAddingExperience, setIsAddingExperience] = useState(false);
   const [editingExperience, setEditingExperience] = useState<Experience | null>(null);
@@ -39,14 +40,19 @@ export function ExperienceSection({
   };
 
   const handleSubmit = async (data: ExperienceFormValues) => {
-    if (editingExperience) {
-      await onUpdateExperience(editingExperience.id, data);
-    } else {
-      await onAddExperience(data);
+    try {
+      if (editingExperience) {
+        await onUpdateExperience(editingExperience.id, data);
+      } else {
+        await onAddExperience(data);
+      }
+      
+      setIsAddingExperience(false);
+      setEditingExperience(null);
+    } catch (error) {
+      // Error is handled by the parent component
+      console.error("Error submitting experience:", error);
     }
-    
-    setIsAddingExperience(false);
-    setEditingExperience(null);
   };
 
   return (
@@ -57,9 +63,19 @@ export function ExperienceSection({
           <Button 
             onClick={handleAddClick} 
             className="flex items-center"
+            disabled={isLoading}
           >
-            <PlusIcon className="h-4 w-4 mr-1" />
-            Add Experience
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <PlusIcon className="h-4 w-4 mr-1" />
+                Add Experience
+              </>
+            )}
           </Button>
         )}
       </div>
@@ -70,6 +86,7 @@ export function ExperienceSection({
             experience={editingExperience} 
             onSubmit={handleSubmit}
             onCancel={handleCancelClick}
+            isLoading={isLoading}
           />
         </GlassCard>
       )}
@@ -79,6 +96,7 @@ export function ExperienceSection({
         onAddClick={handleAddClick}
         onEditClick={handleEditClick}
         onDeleteClick={onDeleteExperience}
+        isLoading={isLoading}
       />
     </>
   );

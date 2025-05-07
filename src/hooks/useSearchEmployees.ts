@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -27,26 +26,24 @@ export function useSearchEmployees() {
     setSearchPerformed(true);
 
     try {
-      console.log("Searching for phone number:", phoneNumber);
+      // Clean the phone number
+      const cleanPhone = phoneNumber.replace(/[\s-]/g, '');
 
-      // Use the search_employee_by_phone RPC function or direct query
+      // First try the RPC function
       const { data, error } = await supabase.rpc(
         'search_employee_by_phone',
-        { phone_query: phoneNumber }
+        { phone_query: cleanPhone }
       );
 
       if (error) {
-        console.error("RPC error:", error);
         throw error;
       }
-      
-      console.log("Search results:", data);
       
       if (data && data.length > 0) {
         const foundEmployee = data[0];
         setEmployee(foundEmployee);
         
-        // Now fetch experiences for this employee
+        // Fetch experiences for this employee
         const { data: expData, error: expError } = await supabase
           .from('experiences')
           .select('*')
@@ -56,10 +53,9 @@ export function useSearchEmployees() {
           
         if (expError) throw expError;
         
-        console.log("Experience data:", expData);
         setExperiences(expData || []);
       } else {
-        // As fallback, try direct query to profiles table
+        // As fallback, try direct query with exact matching
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select(`
@@ -73,10 +69,11 @@ export function useSearchEmployees() {
             )
           `)
           .eq('role', 'employee')
-          .ilike('phone', `%${phoneNumber}%`);
+          .eq('phone', cleanPhone);  // Changed to exact match
           
-        if (profileError) throw profileError;
-        console.log("Direct query results:", profileData);
+        if (profileError) {
+          throw profileError;
+        }
         
         if (profileData && profileData.length > 0) {
           const foundEmployee = {
@@ -107,7 +104,6 @@ export function useSearchEmployees() {
         }
       }
     } catch (err: any) {
-      console.error("Search error:", err);
       setError(err.message || "An error occurred during search");
       toast({
         variant: "destructive",
@@ -135,7 +131,12 @@ export function useSearchEmployees() {
         .select('*')
         .single();
         
-      if (error) throw error;
+      if (error) {
+        if (error.code === '42501') {
+          throw new Error('You do not have permission to add experiences. Please contact support.');
+        }
+        throw error;
+      }
       
       // Refresh experiences list
       const { data: expData, error: expError } = await supabase

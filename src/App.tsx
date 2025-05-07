@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,6 +28,7 @@ import CompanyDashboard from "./pages/company/CompanyDashboard";
 import CompanyProfile from "./pages/company/CompanyProfile";
 import PostJob from "./pages/company/PostJob";
 import CompanyApplications from "./pages/company/CompanyApplications";
+import CompanyApplicationDetails from "./pages/company/CompanyApplicationDetails";
 import SearchWorkers from "./pages/company/SearchWorkers";
 import CompanyJobs from "./pages/company/CompanyJobs";
 import JobDetails from "./pages/company/JobDetails";
@@ -60,7 +60,7 @@ const App = () => (
             <Route path="/company/profile" element={<CompanyProfile />} />
             <Route path="/company/post-job" element={<PostJob />} />
             <Route path="/company/applications" element={<CompanyApplications />} />
-            <Route path="/company/applications/:id" element={<ApplicationDetails />} />
+            <Route path="/company/applications/:id" element={<CompanyApplicationDetails />} />
             <Route path="/company/search" element={<SearchWorkers />} />
             <Route path="/company/jobs" element={<CompanyJobs />} />
             <Route path="/company/jobs/:id" element={<JobDetails />} />

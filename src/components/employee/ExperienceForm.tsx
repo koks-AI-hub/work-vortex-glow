@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,6 +13,7 @@ import {
   FormMessage 
 } from "@/components/ui/form";
 import { Experience } from "@/types/auth";
+import { Loader2 } from "lucide-react";
 
 const experienceSchema = z.object({
   role: z.string().min(2, "Role is required"),
@@ -27,19 +27,20 @@ const experienceSchema = z.object({
 export type ExperienceFormValues = z.infer<typeof experienceSchema>;
 
 interface ExperienceFormProps {
-  experience: Experience | null;
+  experience?: any;
   onSubmit: (data: ExperienceFormValues) => Promise<void>;
   onCancel: () => void;
+  isLoading?: boolean;
 }
 
-export function ExperienceForm({ experience, onSubmit, onCancel }: ExperienceFormProps) {
+export function ExperienceForm({ experience, onSubmit, onCancel, isLoading = false }: ExperienceFormProps) {
   const form = useForm<ExperienceFormValues>({
     resolver: zodResolver(experienceSchema),
     defaultValues: {
       role: experience?.role || "",
       company: experience?.company || "",
-      startDate: experience?.startDate || "",
-      endDate: experience?.endDate || "",
+      startDate: experience?.start_date || "",
+      endDate: experience?.end_date || "",
       current: experience?.current || false,
       description: experience?.description || "",
     },
@@ -48,37 +49,35 @@ export function ExperienceForm({ experience, onSubmit, onCancel }: ExperienceFor
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Job Title</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Frontend Developer" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="company"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Company</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g. Acme Inc." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Job Title</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Frontend Developer" {...field} disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="company"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Company</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Acme Inc." {...field} disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="startDate"
@@ -86,7 +85,7 @@ export function ExperienceForm({ experience, onSubmit, onCancel }: ExperienceFor
               <FormItem>
                 <FormLabel>Start Date</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input type="date" {...field} disabled={isLoading} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -103,10 +102,11 @@ export function ExperienceForm({ experience, onSubmit, onCancel }: ExperienceFor
                     type="checkbox"
                     checked={field.value}
                     onChange={field.onChange}
+                    disabled={isLoading}
                     className="h-4 w-4 text-vortex-500 border-gray-400 rounded focus:ring-vortex-500"
                   />
                 </FormControl>
-                <FormLabel className="m-0">I currently work here</FormLabel>
+                <FormLabel className="m-0">Currently works here</FormLabel>
               </FormItem>
             )}
           />
@@ -116,10 +116,10 @@ export function ExperienceForm({ experience, onSubmit, onCancel }: ExperienceFor
               control={form.control}
               name="endDate"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="col-span-2">
                   <FormLabel>End Date</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -136,9 +136,10 @@ export function ExperienceForm({ experience, onSubmit, onCancel }: ExperienceFor
               <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea 
-                  placeholder="Briefly describe your responsibilities and achievements..." 
+                  placeholder="Describe responsibilities and achievements..." 
                   className="h-24"
                   {...field} 
+                  disabled={isLoading}
                 />
               </FormControl>
               <FormMessage />
@@ -146,12 +147,19 @@ export function ExperienceForm({ experience, onSubmit, onCancel }: ExperienceFor
           )}
         />
         
-        <div className="flex gap-2">
-          <Button type="submit">
-            {experience ? "Update" : "Add"} Experience
-          </Button>
-          <Button type="button" variant="outline" onClick={onCancel}>
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
             Cancel
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {experience ? "Updating..." : "Adding..."}
+              </>
+            ) : (
+              experience ? "Update Experience" : "Add Experience"
+            )}
           </Button>
         </div>
       </form>

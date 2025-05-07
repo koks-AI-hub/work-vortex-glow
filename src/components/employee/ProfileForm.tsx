@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,28 +11,30 @@ import {
   FormLabel, 
   FormMessage 
 } from "@/components/ui/form";
-import { User } from "@/types/auth";
+import { User, Employee, Company } from "@/types/auth";
+import { Loader2 } from "lucide-react";
 
 const profileSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email"),
-  phone: z.string().optional(),
+  name: z.string().min(2, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
 });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
 
 interface ProfileFormProps {
-  user: User | null;
+  user: User | Employee | Company;
   onSubmit: (data: ProfileFormValues) => Promise<void>;
+  isLoading?: boolean;
 }
 
-export function ProfileForm({ user, onSubmit }: ProfileFormProps) {
+export function ProfileForm({ user, onSubmit, isLoading = false }: ProfileFormProps) {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user?.name || "",
-      email: user?.email || "",
-      phone: user?.phone || "",
+      name: user.name || "",
+      email: user.email || "",
+      phone: user.phone || "",
     },
   });
 
@@ -45,9 +46,9 @@ export function ProfileForm({ user, onSubmit }: ProfileFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full Name</FormLabel>
+              <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input placeholder="Your name" {...field} disabled={isLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -61,7 +62,7 @@ export function ProfileForm({ user, onSubmit }: ProfileFormProps) {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input {...field} disabled />
+                <Input type="email" placeholder="your.email@example.com" {...field} disabled={isLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -73,16 +74,25 @@ export function ProfileForm({ user, onSubmit }: ProfileFormProps) {
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone Number</FormLabel>
+              <FormLabel>Phone</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input type="tel" placeholder="Your phone number" {...field} disabled={isLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
-        <Button type="submit">Update Profile</Button>
+        
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Save Changes"
+          )}
+        </Button>
       </form>
     </Form>
   );

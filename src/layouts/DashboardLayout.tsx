@@ -65,6 +65,11 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
       label: "Search Workers",
       icon: <Search className="h-5 w-5 mr-2" />,
     },
+    {
+      path: "/company/profile",
+      label: "Profile",
+      icon: <UserRound className="h-5 w-5 mr-2" />,
+    },
   ];
 
   const routes = user?.role === "employee" ? employeeRoutes : companyRoutes;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,7 +31,7 @@ const companyProfileSchema = z.object({
 });
 
 export default function CompanyProfile() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, uploadProfileImage } = useAuth();
   const { toast } = useToast();
   const [isUpdating, setIsUpdating] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -122,41 +121,19 @@ export default function CompanyProfile() {
     if (!e.target.files || !e.target.files[0]) return;
     if (!user) return;
 
-    const file = e.target.files[0];
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${user.id}-logo.${fileExt}`;
-    const filePath = `company-logos/${fileName}`;
-
     setUploadingLogo(true);
     try {
-      // Upload the logo to storage
-      const { error: uploadError } = await supabase.storage
-        .from("media")
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get the public URL
-      const { data: urlData } = supabase.storage.from("media").getPublicUrl(filePath);
-      const logoUrl = urlData.publicUrl;
-
-      // Update the company record with the logo URL
-      const { error: updateError } = await supabase
-        .from("companies")
-        .update({ logo: logoUrl })
-        .eq("id", user.id);
-
-      if (updateError) throw updateError;
-
-      // Update local state
-      setLogoUrl(logoUrl);
+      const file = e.target.files[0];
+      await uploadProfileImage(file);
       
+      // Update local state with the new logo URL
       if (user.role === 'company') {
         const updatedUser = {
           ...user,
-          logo: logoUrl,
+          logo: user.logo, // The logo URL will be updated by the uploadProfileImage function
         };
         updateUser(updatedUser as User);
+        setLogoUrl(user.logo);
       }
 
       toast({

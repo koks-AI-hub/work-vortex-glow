@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -66,7 +65,15 @@ export default function SearchWorkers() {
       return;
     }
     
-    searchByPhone(phoneNumber);
+    // Clean the phone number before searching
+    const cleanPhone = phoneNumber.replace(/[\s-]/g, '');
+    searchByPhone(cleanPhone);
+  };
+  
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Allow only numbers, spaces, and hyphens
+    const value = e.target.value.replace(/[^\d\s-]/g, '');
+    setPhoneNumber(value);
   };
   
   const onExperienceSubmit = async (data: z.infer<typeof experienceSchema>) => {
@@ -100,9 +107,9 @@ export default function SearchWorkers() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input 
               className="pl-9"
-              placeholder="Enter phone number"
+              placeholder="Enter exact phone number (e.g., 6374871205)"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={handlePhoneChange}
             />
           </div>
           <Button onClick={handleSearch} disabled={isLoading}>
@@ -114,6 +121,9 @@ export default function SearchWorkers() {
             ) : "Search"}
           </Button>
         </div>
+        <p className="text-sm text-gray-400 mt-2">
+          Please enter the complete phone number for an exact match.
+        </p>
       </GlassCard>
       
       {searchPerformed && (
