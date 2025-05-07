@@ -22,7 +22,7 @@ import { Separator } from "@/components/ui/separator";
 import { Loader2, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Company } from "@/types/auth";
+import { Company, User } from "@/types/auth";
 
 const companyProfileSchema = z.object({
   name: z.string().min(2, "Company name must be at least 2 characters"),
@@ -50,15 +50,16 @@ export default function CompanyProfile() {
 
   useEffect(() => {
     // Set form default values when user data is loaded
-    if (user) {
+    if (user && user.role === 'company') {
+      const companyUser = user as Company;
       form.reset({
-        name: user.name || "",
-        phone: user.phone || "",
-        sector: (user as Company)?.sector || "",
-        description: (user as Company)?.description || "",
+        name: companyUser.name || "",
+        phone: companyUser.phone || "",
+        sector: companyUser.sector || "",
+        description: companyUser.description || "",
       });
       
-      setLogoUrl((user as Company)?.logo || null);
+      setLogoUrl(companyUser.logo || null);
     }
   }, [user, form]);
 
@@ -95,13 +96,15 @@ export default function CompanyProfile() {
       });
 
       // Update local state
-      updateUser({
-        ...user,
-        name: data.name,
-        phone: data.phone,
-        sector: data.sector,
-        description: data.description,
-      });
+      if (user.role === 'company') {
+        updateUser({
+          ...user,
+          name: data.name,
+          phone: data.phone,
+          sector: data.sector, 
+          description: data.description,
+        });
+      }
     } catch (error: any) {
       console.error("Error updating profile:", error);
       toast({
@@ -146,10 +149,15 @@ export default function CompanyProfile() {
 
       // Update local state
       setLogoUrl(logoUrl);
-      updateUser({
-        ...user,
-        logo: logoUrl,
-      });
+      
+      // Only update the logo property if user is a company
+      if (user.role === 'company') {
+        const companyUser = user as Company;
+        updateUser({
+          ...companyUser,
+          logo: logoUrl,
+        });
+      }
 
       toast({
         title: "Logo Updated",

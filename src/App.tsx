@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react"
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 // Context Providers
 import { AuthProvider } from "@/context/AuthContext";
@@ -30,6 +30,8 @@ import CompanyProfile from "./pages/company/CompanyProfile";
 import PostJob from "./pages/company/PostJob";
 import CompanyApplications from "./pages/company/CompanyApplications";
 import SearchWorkers from "./pages/company/SearchWorkers";
+import CompanyJobs from "./pages/company/CompanyJobs";
+import JobDetails from "./pages/company/JobDetails";
 
 const queryClient = new QueryClient();
 

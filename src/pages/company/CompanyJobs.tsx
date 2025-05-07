@@ -22,7 +22,6 @@ import {
   Loader2,
   X,
   Plus,
-  Filter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -40,7 +39,7 @@ export default function CompanyJobs() {
       job.location.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = !statusFilter || 
-      (statusFilter === "active" ? job.is_active : !job.is_active);
+      (statusFilter === "active" ? job.isActive : !job.isActive);
     
     return matchesSearch && matchesStatus;
   });
@@ -120,8 +119,8 @@ export default function CompanyJobs() {
                 <div>
                   <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-2">
                     <h3 className="text-xl font-bold text-white">{job.title}</h3>
-                    <Badge variant="outline" className={job.is_active ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}>
-                      {job.is_active ? "Active" : "Inactive"}
+                    <Badge variant="outline" className={job.isActive ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}>
+                      {job.isActive ? "Active" : "Inactive"}
                     </Badge>
                     <Badge variant="outline" className="bg-vortex-500/20 text-vortex-300">
                       {job.type}
@@ -159,8 +158,8 @@ export default function CompanyJobs() {
                   </Button>
                   
                   <Button 
-                    variant={job.is_active ? "destructive" : "outline"} 
-                    onClick={() => toggleJobStatus(job.id, job.is_active)}
+                    variant={job.isActive ? "destructive" : "outline"} 
+                    onClick={() => toggleJobStatus(job.id, job.isActive)}
                     disabled={updateJobStatusMutation.isPending}
                   >
                     {updateJobStatusMutation.isPending ? (
@@ -168,7 +167,7 @@ export default function CompanyJobs() {
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Updating...
                       </>
-                    ) : job.is_active ? (
+                    ) : job.isActive ? (
                       "Deactivate Job"
                     ) : (
                       "Activate Job"

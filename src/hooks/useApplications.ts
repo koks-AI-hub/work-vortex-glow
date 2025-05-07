@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Job, Application } from "@/types/auth";
@@ -27,7 +28,8 @@ export function useApplications() {
         requirements: [],
         salary: "Not specified",
         postedAt: application.applied_at,
-        deadline: null
+        deadline: null,
+        isActive: false
       };
     }
     
@@ -96,6 +98,23 @@ export function useApplications() {
         return Promise.all(transformPromises);
       },
       enabled: !!companyId
+    });
+  };
+  
+  // Get applications count for a specific job
+  const useJobApplicationsCount = (jobId: string) => {
+    return useQuery({
+      queryKey: ['applications-count', jobId],
+      queryFn: async () => {
+        const { count, error } = await supabase
+          .from('applications')
+          .select('id', { count: 'exact', head: true })
+          .eq('job_id', jobId);
+          
+        if (error) throw error;
+        return count || 0;
+      },
+      enabled: !!jobId
     });
   };
   
@@ -209,21 +228,18 @@ export function useApplications() {
         return {
           id: appDetails.id,
           status: appDetails.status,
-          appliedAt: appDetails.applied_at,
-          updatedAt: appDetails.updated_at,
-          job: {
-            id: appDetails.job_id,
-            title: appDetails.job_title,
-            company: appDetails.job_company_name
-          },
-          employee: {
-            id: appDetails.employee_id,
-            name: appDetails.employee_name,
-            email: appDetails.employee_email,
-            phone: appDetails.employee_phone,
-            profilePicture: appDetails.employee_profile_picture,
-            resumeUrl: appDetails.employee_resume_url
-          }
+          applied_at: appDetails.applied_at,
+          updated_at: appDetails.updated_at,
+          job_id: appDetails.job_id,
+          job_title: appDetails.job_title,
+          job_company_name: appDetails.job_company_name,
+          employee_id: appDetails.employee_id,
+          employee_name: appDetails.employee_name,
+          employee_email: appDetails.employee_email,
+          employee_phone: appDetails.employee_phone,
+          employee_profile_picture: appDetails.employee_profile_picture,
+          employee_resume_url: appDetails.employee_resume_url,
+          location: "Remote" // Adding a default location for backward compatibility
         };
       },
       enabled: !!applicationId
@@ -233,6 +249,7 @@ export function useApplications() {
   return {
     useEmployeeApplications,
     useCompanyApplications,
+    useJobApplicationsCount,
     applyMutation,
     updateStatusMutation,
     useHasApplied,

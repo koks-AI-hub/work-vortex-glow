@@ -10,6 +10,7 @@ export interface User {
   name: string;
   phone: string | null;
   role: UserRole;
+  created_at?: string;
 }
 
 // Employee interface extends User with employee-specific fields
@@ -52,6 +53,7 @@ export interface Job {
   salary?: string | null;
   postedAt: string; // ISO date string
   deadline?: string | null; // ISO date string
+  isActive: boolean; // Add this property
 }
 
 // Job application interface

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,7 +18,8 @@ function transformJob(job: any): Job {
     requirements: job.requirements || [],
     salary: job.salary || "Not specified",
     postedAt: job.posted_at,
-    deadline: job.deadline
+    deadline: job.deadline,
+    isActive: job.is_active !== undefined ? job.is_active : true // Map is_active to isActive with default
   };
 }
 
@@ -46,6 +48,7 @@ export function useJobs() {
           posted_at,
           deadline,
           company_id,
+          is_active,
           companies!inner(id, sector)
         `)
         .eq('is_active', true)
@@ -74,7 +77,8 @@ export function useJobs() {
         requirements: job.requirements,
         salary: job.salary,
         postedAt: job.posted_at,
-        deadline: job.deadline
+        deadline: job.deadline,
+        isActive: job.is_active
       }));
     }
   });
@@ -111,7 +115,7 @@ export function useJobs() {
   
   // Create a job (for companies)
   const createJobMutation = useMutation({
-    mutationFn: async (jobData: Omit<Job, 'id' | 'company' | 'postedAt'>) => {
+    mutationFn: async (jobData: Omit<Job, 'id' | 'company' | 'postedAt' | 'isActive'>) => {
       const { data, error } = await supabase
         .from('jobs')
         .insert({
@@ -160,8 +164,9 @@ export function useJobs() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['job', data.id] });
       toast({
         title: "Job Updated",
         description: "Job status has been updated successfully."
