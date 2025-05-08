@@ -260,6 +260,7 @@ export type Database = {
           employee_phone: string
           employee_profile_picture: string
           employee_resume_url: string
+          location: string
         }[]
       }
       get_job_with_company_info: {

@@ -221,11 +221,8 @@ export function useApplications() {
         if (error) throw error;
         if (!data || data.length === 0) throw new Error("Application not found");
         
-        // Add location property with default value if it's not present in the response
+        // The location property should now be included in the response
         const result = data[0];
-        if (!result.location) {
-          result.location = "Remote"; // Provide default location if not available
-        }
         
         return result;
       },
